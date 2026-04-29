@@ -111,14 +111,17 @@ body::before {
 }
 
 .cell {
-  width: 42px; height: 42px;
+  aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: clamp(0.5rem, 2.5vw, 1.2rem);
   border: 1px solid rgba(0,255,255,0.08);
   transition: all 0.15s ease;
   position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .cell.empty { background: rgba(0,255,255,0.02); }
@@ -674,148 +677,229 @@ button:focus:not(:focus-visible) {
 }
 
 @media (max-width: 768px) {
+  * { -webkit-tap-highlight-color: transparent; }
+
   body {
-    padding-bottom: 140px;
-    -webkit-tap-highlight-color: transparent;
+    padding-bottom: 0;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
-  .header h1 { font-size: 1.6rem; }
-  .header .subtitle { font-size: 0.65rem; }
+  .header {
+    padding: 12px 10px;
+  }
+
+  .header h1 {
+    font-size: clamp(1.1rem, 5vw, 1.8rem);
+    letter-spacing: 4px;
+  }
+
+  .header .subtitle {
+    font-size: clamp(0.5rem, 2.5vw, 0.7rem);
+    letter-spacing: 2px;
+  }
 
   .container {
     flex-direction: column;
-    padding: 10px;
-    gap: 15px;
+    padding: 10px 8px 160px;
+    gap: 12px;
     align-items: center;
   }
 
   .grid-panel {
     width: 100%;
-    max-width: 400px;
-    padding: 0 5px;
+    max-width: min(90vw, 500px);
+    padding: 0 2px;
+  }
+
+  .grid-panel::before {
+    font-size: 0.6rem;
+    top: -20px;
   }
 
   #grid {
-    gap: 2px;
-    padding: 8px;
+    gap: clamp(1px, 0.3vw, 3px);
+    padding: clamp(4px, 1vw, 10px);
     width: 100%;
   }
 
   .cell {
-    width: auto;
-    height: auto;
-    aspect-ratio: 1 / 1;
-    font-size: clamp(0.5rem, 3vw, 1rem);
-    border: 1px solid rgba(0,255,255,0.06);
+    font-size: clamp(0.4rem, 2.2vw, 0.9rem);
+    border-width: 1px;
   }
 
-  .cell.player::before { font-size: clamp(0.8rem, 4vw, 1.3rem); }
-  .cell.enemy::before { font-size: clamp(0.7rem, 3.5vw, 1.1rem); }
-  .cell.hackable::before { font-size: clamp(0.5rem, 2.8vw, 0.85rem); }
-  .cell.firewall::before { font-size: clamp(0.6rem, 3vw, 1rem); }
-  .cell.hacked::before { font-size: clamp(0.5rem, 2.5vw, 0.8rem); }
+  .cell.player::before { font-size: clamp(0.6rem, 3vw, 1.2rem); }
+  .cell.enemy::before, .cell.enemy.frozen::before { font-size: clamp(0.55rem, 2.8vw, 1rem); }
+  .cell.hackable::before { font-size: clamp(0.4rem, 2vw, 0.75rem); }
+  .cell.firewall::before { font-size: clamp(0.5rem, 2.5vw, 0.85rem); }
+  .cell.hacked::before { font-size: clamp(0.4rem, 2vw, 0.7rem); }
   .cell.empty::after { width: 1px; height: 1px; }
 
   .legend {
-    flex-direction: row;
-    flex-wrap: wrap;
     justify-content: center;
-    gap: 6px 12px;
-    padding: 8px 5px;
+    gap: 4px 10px;
+    padding: 6px 4px;
   }
 
-  .legend-item { font-size: 0.55rem; }
-  .legend-color { width: 10px; height: 10px; }
+  .legend-item { font-size: 0.5rem; }
+  .legend-color { width: 8px; height: 8px; }
 
   .stats-panel {
     width: 100%;
-    max-width: 400px;
+    max-width: min(90vw, 500px);
     min-width: auto;
   }
 
-  .panel { padding: 12px; margin-bottom: 12px; }
-  .panel::before { font-size: 0.6rem; }
+  .panel {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
 
-  #log { height: 120px; }
-  .log-entry { font-size: 0.7rem; padding: 4px 6px; }
+  .panel::before { font-size: 0.55rem; }
 
-  .stat-row { padding: 6px 0; }
-  .stat-label { font-size: 0.7rem; }
-  .stat-value { font-size: 0.8rem; }
+  #log { height: 80px; }
+  .log-entry { font-size: 0.6rem; padding: 3px 5px; }
+  .log-time { font-size: 0.55rem; }
+
+  .stat-row { padding: 5px 0; }
+  .stat-label { font-size: 0.6rem; }
+  .stat-value { font-size: 0.7rem; }
 
   .dpad-container {
     position: fixed;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
     z-index: 400;
-    background: rgba(5,5,5,0.85);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    padding: 10px 20px;
-    border-radius: 16px;
-    border: 1px solid rgba(0,255,255,0.15);
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+    background: rgba(5,5,5,0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 8px 16px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid rgba(0,255,255,0.15);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
     margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
   }
 
   .dpad-btn {
-    width: 56px;
-    height: 56px;
-    font-size: 1.2rem;
-    border-radius: 12px;
+    width: 52px;
+    height: 52px;
+    font-size: 1.1rem;
+    border-radius: 10px;
   }
 
   .dpad-btn.hack {
-    width: 174px;
-    height: 44px;
-    border-radius: 12px;
+    width: 100%;
+    max-width: 200px;
+    height: 40px;
+    border-radius: 10px;
   }
 
-  .dpad-row { gap: 8px; }
-  .dpad-container { gap: 8px; }
+  .dpad-row { gap: 6px; }
+  .dpad-container { gap: 6px; }
 
-  .action-buttons { margin-top: 8px; }
-  .action-btn { padding: 10px; font-size: 0.8rem; border-radius: 8px; }
-
-  .overlay h2 { font-size: 2rem; letter-spacing: 3px; }
-  .overlay p { font-size: 0.9rem; }
-  .overlay button { width: 80%; max-width: 260px; padding: 14px; font-size: 1rem; }
-
-  .tutorial-content {
-    width: 90%;
-    max-width: 360px;
-    padding: 20px;
-    max-height: 80vh;
+  .action-buttons {
+    width: 100%;
+    max-width: min(90vw, 400px);
+    margin-top: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
   }
 
-  .tutorial-content h3 { font-size: 1.2rem; }
-  .tutorial-content p, .tutorial-content li { font-size: 0.8rem; }
+  .action-btn {
+    padding: 8px 12px;
+    font-size: 0.65rem;
+    border-radius: 8px;
+    letter-spacing: 1px;
+  }
 
-  .skip-link { padding: 6px 12px; font-size: 0.75rem; }
+  .overlay h2 { font-size: 1.6rem; letter-spacing: 2px; }
+  .overlay p { font-size: 0.8rem; }
+  .overlay button { width: 80%; max-width: 260px; padding: 12px; font-size: 0.9rem; }
+
+  .tutorial-box {
+    width: 92%;
+    max-width: 400px;
+    padding: 25px 20px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .tutorial-title { font-size: 1.2rem; }
+  .tutorial-step { padding: 8px; margin: 12px 0; }
+  .step-content h3 { font-size: 0.8rem; }
+  .step-content p { font-size: 0.7rem; line-height: 1.4; }
+  .step-content .key { font-size: 0.65rem; padding: 1px 5px; }
+
+  .tutorial-legend {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .skip-link { padding: 5px 10px; font-size: 0.65rem; }
 
   .hack-ripple {
     animation: rippleExpandMobile 0.5s ease-out forwards;
   }
 
-  @keyframes rippleExpandMobile {
-    0% { width: 0; height: 0; opacity: 1; }
-    100% { width: 100px; height: 100px; opacity: 0; }
+  .footer { display: none; }
+
+  .paused-badge {
+    top: 8px;
+    right: 8px;
+    font-size: 0.6rem;
+    padding: 5px 10px;
   }
 }
 
 @media (max-width: 380px) {
-  .header h1 { font-size: 1.3rem; }
-  .header .subtitle { font-size: 0.55rem; }
+  .header { padding: 8px 5px; }
+  .header h1 { font-size: 1rem; letter-spacing: 3px; }
+  .header .subtitle { font-size: 0.45rem; }
 
-  #grid { padding: 4px; gap: 1px; }
-  .cell { border-width: 0.5px; }
+  #grid { padding: 3px; gap: 1px; }
+  .cell { font-size: 0.45rem; }
 
-  .dpad-btn { width: 50px; height: 50px; font-size: 1.1rem; }
-  .dpad-btn.hack { width: 158px; height: 40px; font-size: 0.75rem; }
-  .dpad-container { padding: 8px 14px; bottom: 5px; }
+  .dpad-btn { width: 46px; height: 46px; font-size: 1rem; }
+  .dpad-btn.hack { height: 36px; font-size: 0.65rem; }
 
-  #log { height: 90px; }
+  .action-btn { padding: 7px 8px; font-size: 0.6rem; }
+
+  .panel { padding: 8px; }
+  #log { height: 60px; }
+  .log-entry { font-size: 0.55rem; }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container { padding: 20px; gap: 20px; }
+
+  .grid-panel { max-width: 480px; }
+
+  #grid { gap: 2px; padding: 10px; }
+
+  .cell {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .cell.player::before { font-size: 1.3rem; }
+  .cell.enemy::before { font-size: 1.1rem; }
+  .cell.hackable::before { font-size: 0.85rem; }
+  .cell.firewall::before { font-size: 1rem; }
+
+  .stats-panel { min-width: 240px; }
+  #log { height: 200px; }
 }
 </style>
 </head>

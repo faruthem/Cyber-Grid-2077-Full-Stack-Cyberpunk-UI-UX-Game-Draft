@@ -849,6 +849,7 @@ button:focus:not(:focus-visible) {
     </div>
     <div class="action-buttons" role="group" aria-label="Game actions">
       <button class="action-btn" style="border-color: var(--yellow); color: var(--yellow);" onclick="openTutorial()" aria-label="Open tutorial">[ TUTORIAL ]</button>
+      <button class="action-btn" id="muteBtn" onclick="toggleMute()" aria-label="Toggle music">[ ♪ AUDIO ON ]</button>
       <button class="action-btn" onclick="restart()" aria-label="Restart game">[ REBOOT SYSTEM ]</button>
     </div>
   </div>
@@ -1045,6 +1046,7 @@ function updateDisplay(data) {
     document.getElementById('finalScore').textContent = data.score;
     document.getElementById('overlay').classList.add('active');
     stopPolling();
+    stopMusic();
   }
 
   updateLog(data.log);
@@ -1160,11 +1162,15 @@ async function restart() {
   prevScore = 0;
   document.getElementById('log').innerHTML = '';
   gameOver = false;
+  stopMusic();
 
   try {
     await fetch('/restart', { method: 'POST' });
     startPolling();
     refreshStatus();
+    if (audioCtx && !isMuted) {
+      startMusic();
+    }
   } catch (e) {
     console.error('Restart error:', e);
   }
@@ -1225,6 +1231,160 @@ document.getElementById('grid').addEventListener('touchend', (e) => {
     move(dy > 0 ? 'down' : 'up');
   }
 }, { passive: true });
+
+let audioCtx = null;
+let musicPlaying = false;
+let isMuted = false;
+let musicNodes = [];
+let arpInterval = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  startMusic();
+}
+
+function startMusic() {
+  if (!audioCtx || musicPlaying) return;
+  musicPlaying = true;
+
+  const masterGain = audioCtx.createGain();
+  masterGain.gain.value = isMuted ? 0 : 0.12;
+  masterGain.connect(audioCtx.destination);
+
+  const lfo = audioCtx.createOscillator();
+  const lfoGain = audioCtx.createGain();
+  lfo.frequency.value = 0.15;
+  lfoGain.gain.value = 3;
+  lfo.connect(lfoGain);
+  lfo.start();
+
+  const drone = audioCtx.createOscillator();
+  drone.type = 'sawtooth';
+  drone.frequency.value = 55;
+  lfoGain.connect(drone.frequency);
+
+  const droneFilter = audioCtx.createBiquadFilter();
+  droneFilter.type = 'lowpass';
+  droneFilter.frequency.value = 200;
+  droneFilter.Q.value = 5;
+
+  const droneGain = audioCtx.createGain();
+  droneGain.gain.value = 0.3;
+  drone.connect(droneFilter);
+  droneFilter.connect(droneGain);
+  droneGain.connect(masterGain);
+  drone.start();
+
+  const pad = audioCtx.createOscillator();
+  pad.type = 'sine';
+  pad.frequency.value = 110;
+
+  const pad2 = audioCtx.createOscillator();
+  pad2.type = 'sine';
+  pad2.frequency.value = 164.81;
+
+  const padGain = audioCtx.createGain();
+  padGain.gain.value = 0.15;
+
+  const padFilter = audioCtx.createBiquadFilter();
+  padFilter.type = 'lowpass';
+  padFilter.frequency.value = 400;
+  padFilter.Q.value = 2;
+
+  pad.connect(padFilter);
+  pad2.connect(padFilter);
+  padFilter.connect(padGain);
+  padGain.connect(masterGain);
+  pad.start();
+  pad2.start();
+
+  const sub = audioCtx.createOscillator();
+  sub.type = 'sine';
+  sub.frequency.value = 36.71;
+  const subGain = audioCtx.createGain();
+  subGain.gain.value = 0.25;
+  sub.connect(subGain);
+  subGain.connect(masterGain);
+  sub.start();
+
+  const bufferSize = audioCtx.sampleRate * 2;
+  const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const output = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    output[i] = Math.random() * 2 - 1;
+  }
+
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = noiseBuffer;
+  noise.loop = true;
+
+  const noiseFilter = audioCtx.createBiquadFilter();
+  noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.value = 800;
+  noiseFilter.Q.value = 10;
+
+  const noiseGain = audioCtx.createGain();
+  noiseGain.gain.value = 0.015;
+
+  noise.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(masterGain);
+  noise.start();
+
+  const arpNotes = [110, 130.81, 146.83, 164.81, 196, 220, 164.81, 146.83];
+  let arpIdx = 0;
+
+  arpInterval = setInterval(() => {
+    if (!musicPlaying || isMuted) return;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.value = arpNotes[arpIdx];
+
+    const arpFilter = audioCtx.createBiquadFilter();
+    arpFilter.type = 'lowpass';
+    arpFilter.frequency.value = 600;
+
+    const arpGain = audioCtx.createGain();
+    arpGain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+    arpGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+
+    osc.connect(arpFilter);
+    arpFilter.connect(arpGain);
+    arpGain.connect(masterGain);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+
+    arpIdx = (arpIdx + 1) % arpNotes.length;
+  }, 350);
+
+  musicNodes.push(masterGain, lfo, lfoGain, drone, droneFilter, droneGain, pad, pad2, padFilter, padGain, sub, subGain, noise, noiseFilter, noiseGain);
+
+  document.addEventListener('gameOver', stopMusic, { once: false });
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (arpInterval) {
+    clearInterval(arpInterval);
+    arpInterval = null;
+  }
+}
+
+function toggleMute() {
+  isMuted = !isMuted;
+  const btn = document.getElementById('muteBtn');
+  if (musicNodes.length > 0) {
+    musicNodes[0].gain.value = isMuted ? 0 : 0.12;
+  }
+  btn.textContent = isMuted ? '[ ♪ AUDIO OFF ]' : '[ ♪ AUDIO ON ]';
+  if (!isMuted && !musicPlaying) {
+    initAudio();
+  }
+}
+
+document.addEventListener('click', () => initAudio(), { once: true });
+document.addEventListener('touchstart', () => initAudio(), { once: true });
 
 function showTutorial() {
   if (localStorage.getItem('cg2077_tutorial') !== 'done') {

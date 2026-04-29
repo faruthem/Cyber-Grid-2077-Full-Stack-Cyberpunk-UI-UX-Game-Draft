@@ -1,18 +1,1 @@
-# Binaries
-cyber-grid-2077
-*.exe
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Env
-.env
-.env.local
+cyber-grid

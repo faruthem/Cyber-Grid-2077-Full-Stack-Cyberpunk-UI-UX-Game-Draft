@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>CYBER-GRID 2077</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -105,6 +105,9 @@ body::before {
   background: rgba(0,255,255,0.03);
   border: 2px solid rgba(0,255,255,0.2);
   box-shadow: 0 0 30px rgba(0,255,255,0.1), inset 0 0 30px rgba(0,255,255,0.05);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .cell {
@@ -340,12 +343,16 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .dpad-btn:hover { background: rgba(0,255,255,0.15); box-shadow: 0 0 15px rgba(0,255,255,0.3); }
 .dpad-btn:active { transform: scale(0.9); }
 
 .dpad-btn.hack {
-  width: 186px; height: 42px;
+  width: 186px; height: 48px;
   border-color: var(--yellow);
   color: var(--yellow);
   font-size: 0.85rem;
@@ -372,6 +379,10 @@ body::before {
   transition: all 0.2s;
   text-transform: uppercase;
   letter-spacing: 2px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .action-btn:hover { background: rgba(255,0,255,0.15); box-shadow: 0 0 15px rgba(255,0,255,0.3); }
 .action-btn:active { transform: scale(0.97); }
@@ -627,6 +638,151 @@ button:focus:not(:focus-visible) {
   .cell.player, .cell.enemy {
     animation: none !important;
   }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 140px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .header h1 { font-size: 1.6rem; }
+  .header .subtitle { font-size: 0.65rem; }
+
+  .container {
+    flex-direction: column;
+    padding: 10px;
+    gap: 15px;
+    align-items: center;
+  }
+
+  .grid-panel {
+    width: 100%;
+    max-width: 400px;
+    padding: 0 5px;
+  }
+
+  #grid {
+    gap: 2px;
+    padding: 8px;
+    width: 100%;
+  }
+
+  .cell {
+    width: auto;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    font-size: clamp(0.5rem, 3vw, 1rem);
+    border: 1px solid rgba(0,255,255,0.06);
+  }
+
+  .cell.player::before { font-size: clamp(0.8rem, 4vw, 1.3rem); }
+  .cell.enemy::before { font-size: clamp(0.7rem, 3.5vw, 1.1rem); }
+  .cell.hackable::before { font-size: clamp(0.5rem, 2.8vw, 0.85rem); }
+  .cell.firewall::before { font-size: clamp(0.6rem, 3vw, 1rem); }
+  .cell.hacked::before { font-size: clamp(0.5rem, 2.5vw, 0.8rem); }
+  .cell.empty::after { width: 1px; height: 1px; }
+
+  .legend {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 12px;
+    padding: 8px 5px;
+  }
+
+  .legend-item { font-size: 0.55rem; }
+  .legend-color { width: 10px; height: 10px; }
+
+  .stats-panel {
+    width: 100%;
+    max-width: 400px;
+    min-width: auto;
+  }
+
+  .panel { padding: 12px; margin-bottom: 12px; }
+  .panel::before { font-size: 0.6rem; }
+
+  #log { height: 120px; }
+  .log-entry { font-size: 0.7rem; padding: 4px 6px; }
+
+  .stat-row { padding: 6px 0; }
+  .stat-label { font-size: 0.7rem; }
+  .stat-value { font-size: 0.8rem; }
+
+  .dpad-container {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 400;
+    background: rgba(5,5,5,0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 10px 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(0,255,255,0.15);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+    margin-top: 0;
+  }
+
+  .dpad-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 1.2rem;
+    border-radius: 12px;
+  }
+
+  .dpad-btn.hack {
+    width: 174px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .dpad-row { gap: 8px; }
+  .dpad-container { gap: 8px; }
+
+  .action-buttons { margin-top: 8px; }
+  .action-btn { padding: 10px; font-size: 0.8rem; border-radius: 8px; }
+
+  .overlay h2 { font-size: 2rem; letter-spacing: 3px; }
+  .overlay p { font-size: 0.9rem; }
+  .overlay button { width: 80%; max-width: 260px; padding: 14px; font-size: 1rem; }
+
+  .tutorial-content {
+    width: 90%;
+    max-width: 360px;
+    padding: 20px;
+    max-height: 80vh;
+  }
+
+  .tutorial-content h3 { font-size: 1.2rem; }
+  .tutorial-content p, .tutorial-content li { font-size: 0.8rem; }
+
+  .skip-link { padding: 6px 12px; font-size: 0.75rem; }
+
+  .hack-ripple {
+    animation: rippleExpandMobile 0.5s ease-out forwards;
+  }
+
+  @keyframes rippleExpandMobile {
+    0% { width: 0; height: 0; opacity: 1; }
+    100% { width: 100px; height: 100px; opacity: 0; }
+  }
+}
+
+@media (max-width: 380px) {
+  .header h1 { font-size: 1.3rem; }
+  .header .subtitle { font-size: 0.55rem; }
+
+  #grid { padding: 4px; gap: 1px; }
+  .cell { border-width: 0.5px; }
+
+  .dpad-btn { width: 50px; height: 50px; font-size: 1.1rem; }
+  .dpad-btn.hack { width: 158px; height: 40px; font-size: 0.75rem; }
+  .dpad-container { padding: 8px 14px; bottom: 5px; }
+
+  #log { height: 90px; }
 }
 </style>
 </head>
@@ -1042,6 +1198,33 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault(); openTutorial(); break;
   }
 });
+
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+const SWIPE_THRESHOLD = 30;
+
+document.getElementById('grid').addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchStartTime = Date.now();
+}, { passive: true });
+
+document.getElementById('grid').addEventListener('touchend', (e) => {
+  if (tutorialOpen || gameOver) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  const elapsed = Date.now() - touchStartTime;
+  if (elapsed > 500) return;
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+  if (Math.max(absDx, absDy) < SWIPE_THRESHOLD) return;
+  if (absDx > absDy) {
+    move(dx > 0 ? 'right' : 'left');
+  } else {
+    move(dy > 0 ? 'down' : 'up');
+  }
+}, { passive: true });
 
 function showTutorial() {
   if (localStorage.getItem('cg2077_tutorial') !== 'done') {

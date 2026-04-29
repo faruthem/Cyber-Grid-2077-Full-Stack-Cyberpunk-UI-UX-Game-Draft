@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CYBER-GRID 2077</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #050505;
+  --fuchsia: #ff00ff;
+  --cyan: #00ffff;
+  --yellow: #fff200;
+  --green: #00ff41;
+  --red: #ff0040;
+}
+
+body {
+  background: var(--bg);
+  color: var(--cyan);
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.header {
+  text-align: center;
+  padding: 20px;
+  border-bottom: 2px solid var(--fuchsia);
+  box-shadow: 0 2px 20px rgba(255,0,255,0.3);
+  position: relative;
+}
+
+.header::before, .header::after {
+  content: '';
+  position: absolute;
+  width: 30px; height: 30px;
+  border: 2px solid var(--cyan);
+}
+.header::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+.header::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+.header h1 {
+  font-size: 2.5rem;
+  letter-spacing: 8px;
+  color: var(--yellow);
+  text-shadow: 0 0 10px var(--yellow), 0 0 20px var(--yellow), 0 0 40px rgba(255,242,0,0.5);
+  animation: glitch 3s infinite;
+}
+
+.header .subtitle {
+  color: var(--fuchsia);
+  font-size: 0.9rem;
+  letter-spacing: 4px;
+  margin-top: 5px;
+  text-shadow: 0 0 10px var(--fuchsia);
+}
+
+@keyframes glitch {
+  0%, 90%, 100% { transform: translate(0); }
+  91% { transform: translate(-2px, 1px); }
+  92% { transform: translate(2px, -1px); }
+  93% { transform: translate(-1px, -1px); }
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 30px;
+  padding: 30px;
+  flex-wrap: wrap;
+}
+
+.grid-panel { position: relative; }
+
+.grid-panel::before {
+  content: 'NETWORK MAP';
+  position: absolute;
+  top: -25px; left: 10px;
+  color: var(--cyan);
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  text-shadow: 0 0 5px var(--cyan);
+}
+
+#grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
+  padding: 15px;
+  background: rgba(0,255,255,0.03);
+  border: 2px solid rgba(0,255,255,0.2);
+  box-shadow: 0 0 30px rgba(0,255,255,0.1), inset 0 0 30px rgba(0,255,255,0.05);
+}
+
+.cell {
+  width: 42px; height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: 1px solid rgba(0,255,255,0.08);
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.cell.empty { background: rgba(0,255,255,0.02); }
+.cell.empty::after { content: ''; width: 2px; height: 2px; background: rgba(0,255,255,0.15); border-radius: 50%; }
+
+.cell.player {
+  background: rgba(0,255,255,0.15);
+  border-color: var(--cyan);
+  box-shadow: 0 0 15px var(--cyan), 0 0 30px rgba(0,255,255,0.3);
+  animation: playerPulse 1.5s infinite;
+}
+.cell.player::before {
+  content: '▣';
+  color: var(--cyan);
+  font-size: 1.5rem;
+  text-shadow: 0 0 10px var(--cyan), 0 0 20px var(--cyan);
+}
+
+@keyframes playerPulse {
+  0%, 100% { box-shadow: 0 0 15px var(--cyan), 0 0 30px rgba(0,255,255,0.3); }
+  50% { box-shadow: 0 0 25px var(--cyan), 0 0 50px rgba(0,255,255,0.5); }
+}
+
+.cell.enemy {
+  background: rgba(255,0,255,0.15);
+  border-color: var(--fuchsia);
+  box-shadow: 0 0 15px var(--fuchsia), 0 0 30px rgba(255,0,255,0.3);
+  animation: enemyPulse 0.8s infinite;
+}
+.cell.enemy::before {
+  content: '◉';
+  color: var(--fuchsia);
+  font-size: 1.3rem;
+  text-shadow: 0 0 10px var(--fuchsia), 0 0 20px var(--fuchsia);
+}
+
+@keyframes enemyPulse {
+  0%, 100% { box-shadow: 0 0 15px var(--fuchsia), 0 0 30px rgba(255,0,255,0.3); }
+  50% { box-shadow: 0 0 25px var(--fuchsia), 0 0 50px rgba(255,0,255,0.5); }
+}
+
+.cell.hackable {
+  background: rgba(255,242,0,0.08);
+  border-color: rgba(255,242,0,0.3);
+  animation: hackableBlink 2s infinite;
+}
+.cell.hackable::before {
+  content: '◆';
+  color: var(--yellow);
+  font-size: 1rem;
+  text-shadow: 0 0 8px var(--yellow);
+}
+
+@keyframes hackableBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.cell.firewall {
+  background: rgba(255,0,64,0.1);
+  border-color: rgba(255,0,64,0.4);
+  box-shadow: inset 0 0 10px rgba(255,0,64,0.2);
+}
+.cell.firewall::before {
+  content: '▓';
+  color: var(--red);
+  font-size: 1.2rem;
+  text-shadow: 0 0 8px var(--red);
+}
+
+.cell.hacked { background: rgba(0,255,65,0.05); border-color: rgba(0,255,65,0.2); }
+.cell.hacked::before { content: '✓'; color: var(--green); font-size: 0.9rem; }
+
+.cell.hacking {
+  animation: hackFlash 0.6s ease forwards;
+}
+
+@keyframes hackFlash {
+  0% { background: rgba(255,242,0,0.5); box-shadow: 0 0 20px var(--yellow), 0 0 40px rgba(255,242,0,0.3); transform: scale(1); }
+  30% { background: rgba(0,255,65,0.4); box-shadow: 0 0 25px var(--green); transform: scale(1.1); }
+  100% { background: rgba(0,255,65,0.05); box-shadow: 0 0 10px rgba(0,255,65,0.2); transform: scale(1); }
+}
+
+.hack-ripple {
+  position: fixed;
+  pointer-events: none;
+  border: 2px solid var(--cyan);
+  border-radius: 50%;
+  animation: rippleExpand 0.5s ease-out forwards;
+  z-index: 200;
+}
+
+@keyframes rippleExpand {
+  0% { width: 0; height: 0; opacity: 1; }
+  100% { width: 180px; height: 180px; opacity: 0; }
+}
+
+.float-credit {
+  position: fixed;
+  pointer-events: none;
+  color: var(--green);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-shadow: 0 0 10px var(--green), 0 0 20px rgba(0,255,65,0.5);
+  z-index: 300;
+  animation: floatUp 1s ease-out forwards;
+}
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  50% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+}
+
+.grid-panel.hack-active #grid {
+  box-shadow: 0 0 40px rgba(0,255,65,0.3), inset 0 0 40px rgba(0,255,65,0.1);
+  border-color: var(--green);
+  transition: all 0.15s ease;
+}
+
+.cell.scan-line {
+  animation: scanPulse 0.3s ease;
+}
+
+@keyframes scanPulse {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(2); }
+  100% { filter: brightness(1); }
+}
+
+.stats-panel { min-width: 280px; }
+
+.panel {
+  background: rgba(0,255,255,0.03);
+  border: 1px solid rgba(0,255,255,0.15);
+  padding: 15px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.panel::before {
+  content: attr(data-title);
+  position: absolute;
+  top: -10px; left: 10px;
+  background: var(--bg);
+  padding: 0 8px;
+  color: var(--fuchsia);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0,255,255,0.05);
+}
+
+.stat-label { color: rgba(0,255,255,0.6); font-size: 0.8rem; }
+
+.stat-value { color: var(--yellow); font-size: 0.9rem; text-shadow: 0 0 5px rgba(255,242,0,0.3); }
+.stat-value.score { color: var(--green); text-shadow: 0 0 5px var(--green); }
+.stat-value.level { color: var(--fuchsia); text-shadow: 0 0 5px var(--fuchsia); }
+
+#log {
+  height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--fuchsia) transparent;
+}
+
+#log::-webkit-scrollbar { width: 4px; }
+#log::-webkit-scrollbar-track { background: transparent; }
+#log::-webkit-scrollbar-thumb { background: var(--fuchsia); box-shadow: 0 0 5px var(--fuchsia); }
+
+.log-entry {
+  padding: 6px 8px;
+  margin: 3px 0;
+  font-size: 0.75rem;
+  border-left: 2px solid transparent;
+  animation: logSlide 0.3s ease;
+  line-height: 1.4;
+}
+
+@keyframes logSlide {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.log-entry.info { color: var(--cyan); border-left-color: var(--cyan); background: rgba(0,255,255,0.03); }
+.log-entry.warning { color: var(--yellow); border-left-color: var(--yellow); background: rgba(255,242,0,0.03); }
+.log-entry.danger { color: var(--red); border-left-color: var(--red); background: rgba(255,0,64,0.05); animation: logSlide 0.3s ease, dangerFlash 0.5s ease; }
+.log-entry.success { color: var(--green); border-left-color: var(--green); background: rgba(0,255,65,0.03); }
+
+@keyframes dangerFlash {
+  0%, 100% { background: rgba(255,0,64,0.05); }
+  50% { background: rgba(255,0,64,0.15); }
+}
+
+.log-time { color: rgba(0,255,255,0.3); margin-right: 8px; }
+
+.dpad-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  gap: 6px;
+}
+
+.dpad-row { display: flex; gap: 6px; }
+
+.dpad-btn {
+  width: 60px; height: 60px;
+  background: rgba(0,255,255,0.05);
+  border: 1px solid rgba(0,255,255,0.3);
+  color: var(--cyan);
+  font-family: inherit;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dpad-btn:hover { background: rgba(0,255,255,0.15); box-shadow: 0 0 15px rgba(0,255,255,0.3); }
+.dpad-btn:active { transform: scale(0.9); }
+
+.dpad-btn.hack {
+  width: 186px; height: 42px;
+  border-color: var(--yellow);
+  color: var(--yellow);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+}
+.dpad-btn.hack:hover { background: rgba(255,242,0,0.15); box-shadow: 0 0 15px rgba(255,242,0,0.3); }
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255,0,255,0.05);
+  border: 1px solid rgba(255,0,255,0.3);
+  color: var(--fuchsia);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.action-btn:hover { background: rgba(255,0,255,0.15); box-shadow: 0 0 15px rgba(255,0,255,0.3); }
+.action-btn:active { transform: scale(0.97); }
+
+.overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(5,5,5,0.9);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 500;
+  flex-direction: column;
+}
+.overlay.active { display: flex; }
+
+.overlay h2 {
+  font-size: 3rem;
+  color: var(--red);
+  text-shadow: 0 0 20px var(--red), 0 0 40px rgba(255,0,64,0.5);
+  letter-spacing: 6px;
+  margin-bottom: 20px;
+  animation: glitch 0.5s infinite;
+}
+
+.overlay p { color: var(--cyan); font-size: 1.2rem; margin: 5px; letter-spacing: 2px; }
+
+.overlay .action-btn { margin-top: 30px; padding: 15px 40px; font-size: 1.1rem; }
+
+.tutorial-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(5,5,5,0.95);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 600;
+}
+.tutorial-overlay.active { display: flex; }
+
+.tutorial-box {
+  background: rgba(0,255,255,0.03);
+  border: 2px solid var(--cyan);
+  box-shadow: 0 0 40px rgba(0,255,255,0.2), inset 0 0 40px rgba(0,255,255,0.05);
+  padding: 40px;
+  max-width: 650px;
+  width: 90%;
+  position: relative;
+  animation: tutorialAppear 0.5s ease;
+}
+
+@keyframes tutorialAppear {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.tutorial-box::before {
+  content: '/// TUTORIAL - FIRST RUN PROTOCOL';
+  position: absolute;
+  top: -12px; left: 20px;
+  background: var(--bg);
+  padding: 0 10px;
+  color: var(--yellow);
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+}
+
+.tutorial-close {
+  position: absolute;
+  top: 10px; right: 15px;
+  background: none;
+  border: 1px solid rgba(255,0,64,0.5);
+  color: var(--red);
+  font-size: 1.2rem;
+  width: 32px; height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.tutorial-close:hover { background: rgba(255,0,64,0.15); box-shadow: 0 0 10px rgba(255,0,64,0.3); }
+
+.tutorial-title {
+  color: var(--cyan);
+  font-size: 1.6rem;
+  letter-spacing: 4px;
+  text-shadow: 0 0 10px var(--cyan);
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.tutorial-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  margin: 18px 0;
+  padding: 12px;
+  border-left: 2px solid rgba(0,255,255,0.2);
+  background: rgba(0,255,255,0.02);
+}
+
+.step-num {
+  color: var(--yellow);
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-shadow: 0 0 8px var(--yellow);
+  min-width: 30px;
+}
+
+.step-content h3 {
+  color: var(--fuchsia);
+  font-size: 0.95rem;
+  letter-spacing: 2px;
+  margin-bottom: 5px;
+}
+
+.step-content p {
+  color: rgba(0,255,255,0.7);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.step-content .key {
+  display: inline-block;
+  background: rgba(0,255,255,0.1);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  margin: 0 2px;
+  text-shadow: 0 0 5px var(--cyan);
+}
+
+.tutorial-legend {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid rgba(0,255,255,0.1);
+}
+
+.t-legend-item { display: flex; align-items: center; gap: 10px; }
+
+.t-legend-icon {
+  width: 24px; height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  border: 1px solid;
+}
+
+.t-legend-icon.player { color: var(--cyan); border-color: var(--cyan); background: rgba(0,255,255,0.15); box-shadow: 0 0 8px rgba(0,255,255,0.3); }
+.t-legend-icon.enemy { color: var(--fuchsia); border-color: var(--fuchsia); background: rgba(255,0,255,0.15); box-shadow: 0 0 8px rgba(255,0,255,0.3); }
+.t-legend-icon.hackable { color: var(--yellow); border-color: var(--yellow); background: rgba(255,242,0,0.1); }
+.t-legend-icon.firewall { color: var(--red); border-color: var(--red); background: rgba(255,0,64,0.1); }
+
+.t-legend-text { font-size: 0.75rem; color: rgba(0,255,255,0.7); }
+
+.tutorial-footer { text-align: center; margin-top: 25px; }
+.tutorial-footer .action-btn { padding: 14px 50px; font-size: 1rem; letter-spacing: 3px; }
+.tutorial-footer p { color: rgba(0,255,255,0.3); font-size: 0.7rem; margin-top: 10px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: rgba(0,255,255,0.6); }
+.legend-color { width: 12px; height: 12px; border: 1px solid; }
+.legend-color.player { background: rgba(0,255,255,0.3); border-color: var(--cyan); box-shadow: 0 0 5px var(--cyan); }
+.legend-color.enemy { background: rgba(255,0,255,0.3); border-color: var(--fuchsia); box-shadow: 0 0 5px var(--fuchsia); }
+.legend-color.hackable { background: rgba(255,242,0,0.2); border-color: var(--yellow); box-shadow: 0 0 5px var(--yellow); }
+.legend-color.firewall { background: rgba(255,0,64,0.2); border-color: var(--red); }
+
+.footer {
+  text-align: center;
+  padding: 15px;
+  color: rgba(0,255,255,0.3);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  border-top: 1px solid rgba(0,255,255,0.1);
+}
+
+.paused-badge {
+  position: fixed;
+  top: 20px;
+  right: 30px;
+  background: rgba(255,242,0,0.1);
+  border: 1px solid var(--yellow);
+  color: var(--yellow);
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  display: none;
+  animation: pauseBlink 1s infinite;
+  z-index: 400;
+}
+
+.paused-badge.active { display: block; }
+
+@keyframes pauseBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--yellow);
+  color: var(--bg);
+  padding: 8px 16px;
+  z-index: 999;
+  font-weight: bold;
+  text-decoration: none;
+  letter-spacing: 1px;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 10px var(--cyan);
+}
+
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .cell.player, .cell.enemy {
+    animation: none !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<a href="#game-grid" class="skip-link">Skip to game grid</a>
+
+<div class="paused-badge" id="pausedBadge">⏸ SYSTEM PAUSED</div>
+
+<div class="header">
+  <h1>CYBER-GRID 2077</h1>
+  <div class="subtitle">[ NETWORK INFILTRATION SYSTEM v2.7.7 ]</div>
+</div>
+
+<div class="container">
+  <div class="grid-panel">
+    <div id="grid" role="grid" aria-label="Cyber-Grid game board" tabindex="0" id="game-grid"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-color player"></div>PLAYER</div>
+      <div class="legend-item"><div class="legend-color enemy"></div>TRACKER</div>
+      <div class="legend-item"><div class="legend-color hackable"></div>DATA NODE</div>
+      <div class="legend-item"><div class="legend-color firewall"></div>FIREWALL</div>
+    </div>
+  </div>
+
+  <div class="stats-panel">
+    <div class="panel" data-title="STATUS">
+      <div class="stat-row">
+        <span class="stat-label">CREDITS</span>
+        <span class="stat-value score" id="score" aria-live="polite" aria-atomic="true">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">CLEARANCE</span>
+        <span class="stat-value level" id="level">1</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">GRID SIZE</span>
+        <span class="stat-value">12x12</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">STATUS</span>
+        <span class="stat-value" id="status">ONLINE</span>
+      </div>
+    </div>
+
+    <div class="panel" data-title="SYSTEM LOG">
+      <div id="log" role="log" aria-live="polite" aria-label="Game event log"></div>
+    </div>
+
+    <div class="dpad-container" role="group" aria-label="Movement controls">
+      <div class="dpad-row">
+        <div class="dpad-btn" style="visibility:hidden" aria-hidden="true"></div>
+        <button class="dpad-btn" onclick="move('up')" aria-label="Move up">▲</button>
+        <div class="dpad-btn" style="visibility:hidden" aria-hidden="true"></div>
+      </div>
+      <div class="dpad-row">
+        <button class="dpad-btn" onclick="move('left')" aria-label="Move left">◄</button>
+        <button class="dpad-btn" onclick="move('down')" aria-label="Move down">▼</button>
+        <button class="dpad-btn" onclick="move('right')" aria-label="Move right">►</button>
+      </div>
+      <div class="dpad-row">
+        <button class="dpad-btn hack" onclick="move('hack')" aria-label="Hack adjacent nodes">[ HACK ]</button>
+      </div>
+    </div>
+    <div class="action-buttons" role="group" aria-label="Game actions">
+      <button class="action-btn" style="border-color: var(--yellow); color: var(--yellow);" onclick="openTutorial()" aria-label="Open tutorial">[ TUTORIAL ]</button>
+      <button class="action-btn" onclick="restart()" aria-label="Restart game">[ REBOOT SYSTEM ]</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" role="alertdialog" aria-modal="true" aria-label="Game over dialog">
+  <h2>BREACH DETECTED</h2>
+  <p>CONNECTION TERMINATED</p>
+  <p>FINAL SCORE: <span id="finalScore">0</span> CREDITS</p>
+  <button class="action-btn" onclick="restart()" aria-label="Restart game">[ REBOOT SYSTEM ]</button>
+</div>
+
+<div class="tutorial-overlay" id="tutorial" role="dialog" aria-modal="true" aria-label="Game tutorial">
+  <div class="tutorial-box">
+    <button class="tutorial-close" onclick="closeTutorial()" aria-label="Close tutorial">✕</button>
+    <div class="tutorial-title">CYBER-GRID 2077</div>
+
+    <div class="tutorial-step">
+      <span class="step-num">01</span>
+      <div class="step-content">
+        <h3>NAVEGATE THE GRID</h3>
+        <p>Move your cursor through the network using <span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> or <span class="key">↑</span> <span class="key">←</span> <span class="key">↓</span> <span class="key">→</span>. You are the cyan <span class="key">▣</span> node.</p>
+      </div>
+    </div>
+
+    <div class="tutorial-step">
+      <span class="step-num">02</span>
+      <div class="step-content">
+        <h3>HACK DATA NODES</h3>
+        <p>Reach yellow <span class="key">◆</span> data nodes to collect credits. Press <span class="key">SPACE</span> or <span class="key">H</span> to hack all adjacent nodes at once for double points.</p>
+      </div>
+    </div>
+
+    <div class="tutorial-step">
+      <span class="step-num">03</span>
+      <div class="step-content">
+        <h3>EVADE TRACKERS</h3>
+        <p>Fuchsia <span class="key">◉</span> trackers hunt you across the grid. If one reaches your position, your connection is terminated. Use red <span class="key">▓</span> firewalls as barriers - trackers cannot pass through them.</p>
+      </div>
+    </div>
+
+    <div class="tutorial-step">
+      <span class="step-num">04</span>
+      <div class="step-content">
+        <h3>LEVEL UP</h3>
+        <p>Accumulate credits to raise your clearance level. Higher levels spawn more data nodes but also more aggressive trackers. Survive as long as possible.</p>
+      </div>
+    </div>
+
+    <div class="tutorial-legend">
+      <div class="t-legend-item">
+        <div class="t-legend-icon player">▣</div>
+        <span class="t-legend-text">PLAYER (You)</span>
+      </div>
+      <div class="t-legend-item">
+        <div class="t-legend-icon enemy">◉</div>
+        <span class="t-legend-text">TRACKER (Enemy)</span>
+      </div>
+      <div class="t-legend-item">
+        <div class="t-legend-icon hackable">◆</div>
+        <span class="t-legend-text">DATA NODE (Hackable)</span>
+      </div>
+      <div class="t-legend-item">
+        <div class="t-legend-icon firewall">▓</div>
+        <span class="t-legend-text">FIREWALL (Block)</span>
+      </div>
+    </div>
+
+    <div class="tutorial-footer">
+      <button class="action-btn" onclick="closeTutorial()">[ RESUME ]</button>
+      <p>GAME IS PAUSED WHILE TUTORIAL IS ACTIVE</p>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  CYBER-GRID 2077 // SECURE CONNECTION // ALL ACTIVITIES MONITORED
+</div>
+
+<script>
+let currentLog = [];
+let gameOver = false;
+let tutorialOpen = false;
+let pollInterval = null;
+let prevHackedNodes = new Set();
+let prevScore = 0;
+
+function initGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 144; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell empty';
+    cell.dataset.index = i;
+    grid.appendChild(cell);
+  }
+}
+
+function startPolling() {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(refreshStatus, 500);
+}
+
+function stopPolling() {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+}
+
+function openTutorial() {
+  tutorialOpen = true;
+  document.getElementById('tutorial').classList.add('active');
+  document.getElementById('pausedBadge').classList.add('active');
+  stopPolling();
+}
+
+function closeTutorial() {
+  tutorialOpen = false;
+  document.getElementById('tutorial').classList.remove('active');
+  document.getElementById('pausedBadge').classList.remove('active');
+  localStorage.setItem('cg2077_tutorial', 'done');
+  startPolling();
+}
+
+function updateDisplay(data) {
+  gameOver = data.gameOver;
+  const cells = document.querySelectorAll('.cell');
+  const currentHackedNodes = new Set();
+
+  cells.forEach((cell, idx) => {
+    const x = Math.floor(idx / 12);
+    const y = idx % 12;
+    const node = data.nodes[x][y];
+    cell.className = 'cell';
+
+    if (x === data.player.X && y === data.player.Y) {
+      cell.classList.add('player');
+      return;
+    }
+
+    for (const enemy of data.enemies) {
+      if (enemy.X === x && enemy.Y === y) {
+        cell.classList.add('enemy');
+        return;
+      }
+    }
+
+    if (node.hacked) {
+      currentHackedNodes.add(`${x},${y}`);
+    }
+
+    if (node.type === 3) {
+      cell.classList.add('hackable');
+    } else if (node.type === 4) {
+      cell.classList.add('firewall');
+    } else if (node.hacked) {
+      cell.classList.add('hacked');
+    } else {
+      cell.classList.add('empty');
+    }
+  });
+
+  for (const key of currentHackedNodes) {
+    if (!prevHackedNodes.has(key)) {
+      const [x, y] = key.split(',').map(Number);
+      const idx = x * 12 + y;
+      const cell = document.querySelector(`.cell[data-index="${idx}"]`);
+      if (cell) {
+        cell.classList.add('hacking');
+        const nodeVal = data.nodes[x][y].data;
+        showFloatCredit(cell, nodeVal * 2);
+        setTimeout(() => cell.classList.remove('hacking'), 600);
+      }
+    }
+  }
+  prevHackedNodes = currentHackedNodes;
+
+  const scoreEl = document.getElementById('score');
+  if (data.score !== prevScore && data.score > prevScore) {
+    scoreEl.style.textShadow = '0 0 15px var(--green), 0 0 30px var(--green)';
+    setTimeout(() => {
+      scoreEl.style.textShadow = '0 0 5px var(--green)';
+    }, 400);
+  }
+  prevScore = data.score;
+
+  scoreEl.textContent = data.score;
+  document.getElementById('level').textContent = data.level;
+  document.getElementById('status').textContent = data.gameOver ? 'OFFLINE' : 'ONLINE';
+  document.getElementById('status').style.color = data.gameOver ? 'var(--red)' : 'var(--green)';
+
+  if (data.gameOver) {
+    document.getElementById('finalScore').textContent = data.score;
+    document.getElementById('overlay').classList.add('active');
+    stopPolling();
+  }
+
+  updateLog(data.log);
+}
+
+function updateLog(log) {
+  if (log.length === currentLog.length) return;
+
+  const logEl = document.getElementById('log');
+  const newEntries = log.slice(currentLog.length);
+  currentLog = log;
+
+  newEntries.forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'log-entry ' + entry.type;
+    div.innerHTML = '<span class="log-time">[' + entry.time + ']</span>' + entry.message;
+    logEl.appendChild(div);
+  });
+
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+async function move(dir) {
+  if (gameOver || tutorialOpen) return;
+
+  if (dir === 'hack') {
+    const playerPos = getPlayerPosition();
+    if (playerPos) {
+      showHackRipple(playerPos);
+      flashAdjacentCells(playerPos);
+    }
+    document.querySelector('.grid-panel').classList.add('hack-active');
+    setTimeout(() => {
+      document.querySelector('.grid-panel').classList.remove('hack-active');
+    }, 600);
+  }
+
+  try {
+    const res = await fetch('/move', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dir: dir })
+    });
+    await res.json();
+    refreshStatus();
+  } catch (e) {
+    console.error('Move error:', e);
+  }
+}
+
+function getPlayerPosition() {
+  const playerCell = document.querySelector('.cell.player');
+  if (!playerCell) return null;
+  const idx = parseInt(playerCell.dataset.index);
+  return { x: Math.floor(idx / 12), y: idx % 12 };
+}
+
+function flashAdjacentCells(pos) {
+  const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  for (const [dx, dy] of dirs) {
+    const nx = pos.x + dx;
+    const ny = pos.y + dy;
+    if (nx >= 0 && nx < 12 && ny >= 0 && ny < 12) {
+      const idx = nx * 12 + ny;
+      const cell = document.querySelector(`.cell[data-index="${idx}"]`);
+      if (cell) {
+        cell.classList.add('scan-line');
+        setTimeout(() => cell.classList.remove('scan-line'), 300);
+      }
+    }
+  }
+}
+
+function showHackRipple(pos) {
+  const cell = document.querySelector(`.cell[data-index="${pos.x * 12 + pos.y}"]`);
+  if (!cell) return;
+
+  const rect = cell.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  for (let i = 0; i < 2; i++) {
+    const ripple = document.createElement('div');
+    ripple.className = 'hack-ripple';
+    ripple.style.left = (cx - 90) + 'px';
+    ripple.style.top = (cy - 90) + 'px';
+    ripple.style.marginLeft = '0';
+    ripple.style.marginTop = '0';
+    if (i > 0) {
+      ripple.style.borderColor = 'var(--green)';
+      ripple.style.animationDelay = '0.1s';
+    }
+    document.body.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+  }
+}
+
+function showFloatCredit(cell, value) {
+  const rect = cell.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'float-credit';
+  el.textContent = '+' + value;
+  el.style.left = rect.left + 'px';
+  el.style.top = (rect.top - 10) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+async function restart() {
+  document.getElementById('overlay').classList.remove('active');
+  currentLog = [];
+  prevHackedNodes = new Set();
+  prevScore = 0;
+  document.getElementById('log').innerHTML = '';
+  gameOver = false;
+
+  try {
+    await fetch('/restart', { method: 'POST' });
+    startPolling();
+    refreshStatus();
+  } catch (e) {
+    console.error('Restart error:', e);
+  }
+}
+
+async function refreshStatus() {
+  if (tutorialOpen) return;
+  try {
+    const res = await fetch('/status');
+    const data = await res.json();
+    updateDisplay(data);
+  } catch (e) {
+    console.error('Status error:', e);
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (tutorialOpen) return;
+  switch (e.key) {
+    case 'ArrowUp': case 'w': case 'W':
+      e.preventDefault(); move('up'); break;
+    case 'ArrowDown': case 's': case 'S':
+      e.preventDefault(); move('down'); break;
+    case 'ArrowLeft': case 'a': case 'A':
+      e.preventDefault(); move('left'); break;
+    case 'ArrowRight': case 'd': case 'D':
+      e.preventDefault(); move('right'); break;
+    case ' ': case 'h': case 'H':
+      e.preventDefault(); move('hack'); break;
+    case 'Escape':
+      e.preventDefault(); openTutorial(); break;
+  }
+});
+
+function showTutorial() {
+  if (localStorage.getItem('cg2077_tutorial') !== 'done') {
+    openTutorial();
+  } else {
+    startPolling();
+    refreshStatus();
+  }
+}
+
+initGrid();
+showTutorial();
+</script>
+
+</body>
+</html>

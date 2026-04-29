@@ -64,25 +64,29 @@ type LogEntry struct {
 }
 
 type GameGrid struct {
-	mu       sync.RWMutex
-	Nodes    [][]Node
-	Player   Position
-	Enemies  []Position
-	Log      []LogEntry
-	Score    int
-	Level    int
-	GameOver bool
-	cancel   context.CancelFunc
+	mu               sync.RWMutex
+	Nodes            [][]Node
+	Player           Position
+	Enemies          []Position
+	Log              []LogEntry
+	Score            int
+	Level            int
+	GameOver         bool
+	cancel           context.CancelFunc
+	FrozenUntil      time.Time
+	FreezeCooldownUntil time.Time
 }
 
 type StatusResponse struct {
-	Nodes    [][]Node   `json:"nodes"`
-	Player   Position   `json:"player"`
-	Enemies  []Position `json:"enemies"`
-	Log      []LogEntry `json:"log"`
-	Score    int        `json:"score"`
-	Level    int        `json:"level"`
-	GameOver bool       `json:"gameOver"`
+	Nodes        [][]Node   `json:"nodes"`
+	Player       Position   `json:"player"`
+	Enemies      []Position `json:"enemies"`
+	Log          []LogEntry `json:"log"`
+	Score        int        `json:"score"`
+	Level        int        `json:"level"`
+	GameOver     bool       `json:"gameOver"`
+	EnemiesFrozen bool      `json:"enemiesFrozen"`
+	FreezeReady  bool       `json:"freezeReady"`
 }
 
 type Server struct {
@@ -184,6 +188,15 @@ func (s *Server) moveEnemies(ctx context.Context) {
 			if g == nil || g.GameOver {
 				s.mu.Unlock()
 				continue
+			}
+
+			if time.Now().Before(g.FrozenUntil) {
+				s.mu.Unlock()
+				continue
+			}
+			if !g.FrozenUntil.IsZero() {
+				g.addLog("TRACKERS UNFROZEN - MOVEMENT RESUMED", "warning")
+				g.FrozenUntil = time.Time{}
 			}
 
 			for i := range g.Enemies {
@@ -309,13 +322,15 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := StatusResponse{
-		Nodes:    g.Nodes,
-		Player:   g.Player,
-		Enemies:  g.Enemies,
-		Log:      g.Log,
-		Score:    g.Score,
-		Level:    g.Level,
-		GameOver: g.GameOver,
+		Nodes:         g.Nodes,
+		Player:        g.Player,
+		Enemies:       g.Enemies,
+		Log:           g.Log,
+		Score:         g.Score,
+		Level:         g.Level,
+		GameOver:      g.GameOver,
+		EnemiesFrozen: time.Now().Before(g.FrozenUntil),
+		FreezeReady:   time.Now().After(g.FreezeCooldownUntil),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -358,6 +373,29 @@ func (s *Server) handleMove(w http.ResponseWriter, r *http.Request) {
 
 	if moveReq.Dir == "hack" {
 		s.hackAdjacent(g)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": true,
+			"score":   g.Score,
+			"log":     g.Log[len(g.Log)-1],
+		})
+		return
+	}
+
+	if moveReq.Dir == "freeze" {
+		cooldownExpired := time.Now().After(g.FreezeCooldownUntil)
+		if !cooldownExpired {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success": false,
+				"error":   "freeze on cooldown",
+			})
+			return
+		}
+		g.FrozenUntil = time.Now().Add(4 * time.Second)
+		g.FreezeCooldownUntil = time.Now().Add(15 * time.Second)
+		g.addLog("CRYO-PROTOCOL ACTIVATED - TRACKERS FROZEN", "success")
+		g.addLog("FREEZE DURATION: 4s | COOLDOWN: 15s", "info")
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": true,

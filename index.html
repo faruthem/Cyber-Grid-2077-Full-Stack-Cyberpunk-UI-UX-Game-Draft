@@ -155,9 +155,26 @@ body::before {
   text-shadow: 0 0 10px var(--fuchsia), 0 0 20px var(--fuchsia);
 }
 
+.cell.enemy.frozen {
+  background: rgba(0,200,255,0.15);
+  border-color: var(--cyan);
+  box-shadow: 0 0 15px var(--cyan), 0 0 30px rgba(0,200,255,0.3);
+  animation: frozenPulse 1.2s infinite;
+}
+.cell.enemy.frozen::before {
+  content: '❄';
+  color: var(--cyan);
+  text-shadow: 0 0 10px var(--cyan), 0 0 20px rgba(0,200,255,0.5);
+}
+
 @keyframes enemyPulse {
   0%, 100% { box-shadow: 0 0 15px var(--fuchsia), 0 0 30px rgba(255,0,255,0.3); }
   50% { box-shadow: 0 0 25px var(--fuchsia), 0 0 50px rgba(255,0,255,0.5); }
+}
+
+@keyframes frozenPulse {
+  0%, 100% { box-shadow: 0 0 15px var(--cyan), 0 0 30px rgba(0,200,255,0.3); }
+  50% { box-shadow: 0 0 30px var(--cyan), 0 0 60px rgba(0,200,255,0.5); }
 }
 
 .cell.hackable {
@@ -386,6 +403,22 @@ body::before {
 }
 .action-btn:hover { background: rgba(255,0,255,0.15); box-shadow: 0 0 15px rgba(255,0,255,0.3); }
 .action-btn:active { transform: scale(0.97); }
+.action-btn.frozen-active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0,255,255,0.1);
+  animation: freezeBtnPulse 1.5s infinite;
+}
+.action-btn.frozen-cooldown {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: rgba(0,255,255,0.2);
+  color: rgba(0,255,255,0.3);
+}
+@keyframes freezeBtnPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(0,255,255,0.3); }
+  50% { box-shadow: 0 0 25px rgba(0,255,255,0.6); }
+}
 
 .overlay {
   position: fixed;
@@ -849,7 +882,7 @@ button:focus:not(:focus-visible) {
     </div>
     <div class="action-buttons" role="group" aria-label="Game actions">
       <button class="action-btn" style="border-color: var(--yellow); color: var(--yellow);" onclick="openTutorial()" aria-label="Open tutorial">[ TUTORIAL ]</button>
-      <button class="action-btn" id="muteBtn" onclick="toggleMute()" aria-label="Toggle music">[ ♪ AUDIO ON ]</button>
+      <button class="action-btn" id="freezeBtn" onclick="move('freeze')" aria-label="Freeze trackers">[ ❄ FREEZE ]</button>
       <button class="action-btn" onclick="restart()" aria-label="Restart game">[ REBOOT SYSTEM ]</button>
     </div>
   </div>
@@ -979,6 +1012,27 @@ function updateDisplay(data) {
   gameOver = data.gameOver;
   const cells = document.querySelectorAll('.cell');
   const currentHackedNodes = new Set();
+  const wasFrozen = enemiesFrozen;
+  enemiesFrozen = data.enemiesFrozen;
+  const wasFreezeReady = freezeReady;
+  freezeReady = data.freezeReady;
+  const freezeBtn = document.getElementById('freezeBtn');
+  if (freezeBtn) {
+    if (data.enemiesFrozen) {
+      freezeBtn.textContent = '[ ❄ FROZEN ]';
+      freezeBtn.classList.add('frozen-active');
+    } else if (!data.freezeReady) {
+      freezeBtn.textContent = '[ ❄ COOLDOWN ]';
+      freezeBtn.classList.add('frozen-cooldown');
+    } else {
+      freezeBtn.textContent = '[ ❄ FREEZE ]';
+      freezeBtn.classList.remove('frozen-active', 'frozen-cooldown');
+    }
+  }
+
+  if (!wasFrozen && data.enemiesFrozen) {
+    playSFX('freeze');
+  }
 
   cells.forEach((cell, idx) => {
     const x = Math.floor(idx / 12);
@@ -994,6 +1048,9 @@ function updateDisplay(data) {
     for (const enemy of data.enemies) {
       if (enemy.X === x && enemy.Y === y) {
         cell.classList.add('enemy');
+        if (data.enemiesFrozen) {
+          cell.classList.add('frozen');
+        }
         return;
       }
     }
@@ -1034,6 +1091,10 @@ function updateDisplay(data) {
     setTimeout(() => {
       scoreEl.style.textShadow = '0 0 5px var(--green)';
     }, 400);
+    playSFX('hack');
+  }
+  if (data.level > parseInt(document.getElementById('level').textContent)) {
+    playSFX('levelup');
   }
   prevScore = data.score;
 
@@ -1047,6 +1108,7 @@ function updateDisplay(data) {
     document.getElementById('overlay').classList.add('active');
     stopPolling();
     stopMusic();
+    playSFX('death');
   }
 
   updateLog(data.log);
@@ -1064,6 +1126,13 @@ function updateLog(log) {
     div.className = 'log-entry ' + entry.type;
     div.innerHTML = '<span class="log-time">[' + entry.time + ']</span>' + entry.message;
     logEl.appendChild(div);
+
+    if (entry.message.includes('TRACKER MOVING') || entry.message.includes('TRACKERS UNFROZEN')) {
+      playSFX('tracker');
+    }
+    if (entry.message.includes('FIREWALL BLOCKED')) {
+      playSFX('firewall');
+    }
   });
 
   logEl.scrollTop = logEl.scrollHeight;
@@ -1162,6 +1231,8 @@ async function restart() {
   prevScore = 0;
   document.getElementById('log').innerHTML = '';
   gameOver = false;
+  enemiesFrozen = false;
+  freezeReady = true;
   stopMusic();
 
   try {
@@ -1200,6 +1271,8 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault(); move('right'); break;
     case ' ': case 'h': case 'H':
       e.preventDefault(); move('hack'); break;
+    case 'f': case 'F':
+      e.preventDefault(); move('freeze'); break;
     case 'Escape':
       e.preventDefault(); openTutorial(); break;
   }
@@ -1244,12 +1317,70 @@ function initAudio() {
   startMusic();
 }
 
+function playTone(freq, type, duration, volume, filterFreq) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  osc.type = type;
+  osc.frequency.value = freq;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  if (filterFreq) {
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = filterFreq;
+    osc.connect(filter);
+    filter.connect(gain);
+  } else {
+    osc.connect(gain);
+  }
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playSFX(name) {
+  if (!audioCtx) return;
+  switch (name) {
+    case 'hack':
+      playTone(880, 'square', 0.15, 0.08, 1200);
+      setTimeout(() => playTone(1100, 'square', 0.1, 0.06, 1500), 80);
+      setTimeout(() => playTone(1400, 'square', 0.08, 0.04, 1800), 150);
+      break;
+    case 'death':
+      playTone(220, 'sawtooth', 0.6, 0.12, 400);
+      setTimeout(() => playTone(165, 'sawtooth', 0.5, 0.1, 300), 200);
+      setTimeout(() => playTone(110, 'sawtooth', 0.8, 0.08, 200), 400);
+      break;
+    case 'firewall':
+      playTone(150, 'square', 0.2, 0.08, 300);
+      playTone(180, 'square', 0.15, 0.06, 250);
+      break;
+    case 'tracker':
+      playTone(330, 'sine', 0.15, 0.05, 600);
+      setTimeout(() => playTone(300, 'sine', 0.12, 0.04, 500), 100);
+      break;
+    case 'freeze':
+      playTone(2000, 'sine', 0.1, 0.06);
+      setTimeout(() => playTone(1600, 'sine', 0.1, 0.05), 60);
+      setTimeout(() => playTone(1200, 'sine', 0.15, 0.04), 120);
+      setTimeout(() => playTone(800, 'sine', 0.3, 0.06), 200);
+      break;
+    case 'levelup':
+      playTone(440, 'square', 0.1, 0.08, 800);
+      setTimeout(() => playTone(554, 'square', 0.1, 0.08, 900), 100);
+      setTimeout(() => playTone(659, 'square', 0.1, 0.08, 1000), 200);
+      setTimeout(() => playTone(880, 'square', 0.2, 0.1, 1200), 300);
+      break;
+  }
+}
+
 function startMusic() {
   if (!audioCtx || musicPlaying) return;
   musicPlaying = true;
 
   const masterGain = audioCtx.createGain();
-  masterGain.gain.value = isMuted ? 0 : 0.12;
+  masterGain.gain.value = 0.12;
   masterGain.connect(audioCtx.destination);
 
   const lfo = audioCtx.createOscillator();
@@ -1336,7 +1467,7 @@ function startMusic() {
   let arpIdx = 0;
 
   arpInterval = setInterval(() => {
-    if (!musicPlaying || isMuted) return;
+    if (!musicPlaying) return;
     const osc = audioCtx.createOscillator();
     osc.type = 'square';
     osc.frequency.value = arpNotes[arpIdx];
@@ -1359,8 +1490,6 @@ function startMusic() {
   }, 350);
 
   musicNodes.push(masterGain, lfo, lfoGain, drone, droneFilter, droneGain, pad, pad2, padFilter, padGain, sub, subGain, noise, noiseFilter, noiseGain);
-
-  document.addEventListener('gameOver', stopMusic, { once: false });
 }
 
 function stopMusic() {
@@ -1371,20 +1500,11 @@ function stopMusic() {
   }
 }
 
-function toggleMute() {
-  isMuted = !isMuted;
-  const btn = document.getElementById('muteBtn');
-  if (musicNodes.length > 0) {
-    musicNodes[0].gain.value = isMuted ? 0 : 0.12;
-  }
-  btn.textContent = isMuted ? '[ ♪ AUDIO OFF ]' : '[ ♪ AUDIO ON ]';
-  if (!isMuted && !musicPlaying) {
-    initAudio();
-  }
-}
-
 document.addEventListener('click', () => initAudio(), { once: true });
 document.addEventListener('touchstart', () => initAudio(), { once: true });
+
+let enemiesFrozen = false;
+let freezeReady = true;
 
 function showTutorial() {
   if (localStorage.getItem('cg2077_tutorial') !== 'done') {

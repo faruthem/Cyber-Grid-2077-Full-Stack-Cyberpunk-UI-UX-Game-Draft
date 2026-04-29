@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: cyber-grid-2077
+    env: go
+    buildCommand: go build -o server .
+    startCommand: ./server
+    healthCheckPath: /status
+    envVars:
+      - key: GO_VERSION
+        value: 1.22.0
+      - key: PORT
+        sync: false

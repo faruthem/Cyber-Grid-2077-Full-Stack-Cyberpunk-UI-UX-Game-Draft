@@ -548,8 +548,13 @@ func main() {
 	mux.HandleFunc("/move", srv.handleMove)
 	mux.HandleFunc("/restart", srv.handleRestart)
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: mux,
 	}
 
@@ -559,7 +564,7 @@ func main() {
 	go func() {
 		fmt.Println("╔════════════════════════════════════════╗")
 		fmt.Println("║       CYBER-GRID 2077 SERVER          ║")
-		fmt.Println("║       Listening on :8080              ║")
+		fmt.Printf("║       Listening on :%-15s ║\n", port)
 		fmt.Println("╚════════════════════════════════════════╝")
 
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

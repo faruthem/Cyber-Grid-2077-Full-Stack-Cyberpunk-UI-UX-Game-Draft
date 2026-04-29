@@ -45,12 +45,14 @@ const (
 )
 
 type Node struct {
-	Type   NodeType `json:"type"`
-	X      int      `json:"x"`
-	Y      int      `json:"y"`
-	Health int      `json:"health"`
-	Hacked bool     `json:"hacked"`
-	Data   int      `json:"data"`
+	Type          NodeType `json:"type"`
+	X             int      `json:"x"`
+	Y             int      `json:"y"`
+	Health        int      `json:"health"`
+	Hacked        bool     `json:"hacked"`
+	Data          int      `json:"data"`
+	Vulnerable    bool     `json:"vulnerable"`
+	VulnerableHits int    `json:"vulnerableHits"`
 }
 
 type Position struct {
@@ -64,17 +66,19 @@ type LogEntry struct {
 }
 
 type GameGrid struct {
-	mu               sync.RWMutex
-	Nodes            [][]Node
-	Player           Position
-	Enemies          []Position
-	Log              []LogEntry
-	Score            int
-	Level            int
-	GameOver         bool
-	cancel           context.CancelFunc
-	FrozenUntil      time.Time
+	mu                  sync.RWMutex
+	Nodes               [][]Node
+	Player              Position
+	Enemies             []Position
+	Log                 []LogEntry
+	Score               int
+	Level               int
+	GameOver            bool
+	cancel              context.CancelFunc
+	FrozenUntil         time.Time
 	FreezeCooldownUntil time.Time
+	ShieldUntil         time.Time
+	FirstFirewallDestroyed bool
 }
 
 type StatusResponse struct {
@@ -87,6 +91,7 @@ type StatusResponse struct {
 	GameOver     bool       `json:"gameOver"`
 	EnemiesFrozen bool      `json:"enemiesFrozen"`
 	FreezeReady  bool       `json:"freezeReady"`
+	HasShield    bool       `json:"hasShield"`
 }
 
 type Server struct {
@@ -201,7 +206,9 @@ func (s *Server) moveEnemies(ctx context.Context) {
 
 			for i := range g.Enemies {
 				oldPos := g.Enemies[i]
-				g.Nodes[oldPos.X][oldPos.Y].Type = NodeHackable
+				if g.Nodes[oldPos.X][oldPos.Y].Type != NodePlayer {
+					g.Nodes[oldPos.X][oldPos.Y].Type = NodeHackable
+				}
 
 				moves := []Position{
 					{oldPos.X - 1, oldPos.Y},
@@ -248,6 +255,14 @@ func (s *Server) moveEnemies(ctx context.Context) {
 					g.Enemies[i] = newPos
 
 					if newPos.X == g.Player.X && newPos.Y == g.Player.Y {
+						if time.Now().Before(g.ShieldUntil) {
+							g.addLog("DATA SHIELD ABSORBED TRACKER ATTACK", "success")
+							g.ShieldUntil = time.Time{}
+							g.Nodes[oldPos.X][oldPos.Y].Type = NodeEmpty
+							g.Enemies[i] = oldPos
+							g.Nodes[oldPos.X][oldPos.Y].Type = NodeEnemy
+							continue
+						}
 						g.GameOver = true
 						g.addLog("BREACH DETECTED - PLAYER COMPROMISED", "danger")
 						g.addLog("CONNECTION TERMINATED", "danger")
@@ -306,6 +321,92 @@ func (s *Server) spawnHackableNodes(ctx context.Context) {
 	}
 }
 
+var firewallDirs = []Position{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
+
+func (s *Server) checkFirewallSurrounded(g *GameGrid, fx, fy int, hackRequirement int) bool {
+	hackedCount := 0
+	for _, d := range firewallDirs {
+		nx, ny := fx+d.X, fy+d.Y
+		if nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize {
+			node := &g.Nodes[nx][ny]
+			if node.Hacked || node.Type == NodeEmpty {
+				hackedCount++
+			}
+		}
+	}
+	return hackedCount >= hackRequirement
+}
+
+func (s *Server) markVulnerableFirewalls(g *GameGrid) {
+	for i := 0; i < gridSize; i++ {
+		for j := 0; j < gridSize; j++ {
+			node := &g.Nodes[i][j]
+			if node.Type == NodeFirewall && !node.Vulnerable {
+				hackableAdj := 0
+				hackedCount := 0
+				for _, d := range firewallDirs {
+					nx, ny := i+d.X, j+d.Y
+					if nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize {
+						adj := &g.Nodes[nx][ny]
+						if adj.Type == NodeFirewall || adj.Type == NodeEnemy || adj.Type == NodePlayer {
+							continue
+						}
+						if adj.Type == NodeHackable {
+							hackableAdj++
+							if adj.Hacked {
+								hackedCount++
+							}
+						} else if adj.Hacked {
+							hackableAdj++
+							hackedCount++
+						}
+					}
+				}
+				if hackableAdj > 0 && hackedCount >= hackableAdj {
+					node.Vulnerable = true
+					g.addLog(fmt.Sprintf("FIREWALL %d,%d CRITICAL - BREACH IMMINENT", i, j), "warning")
+				}
+			}
+		}
+	}
+}
+
+func (s *Server) destroyFirewall(g *GameGrid, fx, fy int) {
+	g.Nodes[fx][fy].Type = NodeEmpty
+	g.Nodes[fx][fy].Hacked = true
+	g.Nodes[fx][fy].Vulnerable = false
+	g.Score += 50
+	g.addLog(fmt.Sprintf("FIREWALL %d,%d BREACHED! +50 CREDITS", fx, fy), "success")
+
+	g.FrozenUntil = time.Now().Add(5 * time.Second)
+	g.addLog("EMP PULSE - ALL TRACKERS FROZEN 5s", "success")
+
+	if !g.FirstFirewallDestroyed {
+		g.FirstFirewallDestroyed = true
+		g.ShieldUntil = time.Now().Add(3 * time.Second)
+		g.addLog("DATA SHIELD ACTIVATED - 3s PROTECTION", "info")
+	}
+
+	s.applyFirewallChainReaction(g, fx, fy)
+	s.markVulnerableFirewalls(g)
+}
+
+func (s *Server) applyFirewallChainReaction(g *GameGrid, fx, fy int) {
+	for _, d := range firewallDirs {
+		nx, ny := fx+d.X, fy+d.Y
+		if nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize {
+			node := &g.Nodes[nx][ny]
+			if node.Type == NodeFirewall && !node.Vulnerable {
+				node.VulnerableHits++
+				if node.VulnerableHits >= 1 {
+					node.Vulnerable = true
+					g.addLog(fmt.Sprintf("FIREWALL %d,%d WEAKENED BY CHAIN REACTION", nx, ny), "warning")
+				}
+			}
+		}
+	}
+}
+
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -331,6 +432,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		GameOver:      g.GameOver,
 		EnemiesFrozen: time.Now().Before(g.FrozenUntil),
 		FreezeReady:   time.Now().After(g.FreezeCooldownUntil),
+		HasShield:     time.Now().Before(g.ShieldUntil),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -433,7 +535,7 @@ func (s *Server) handleMove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	target := &g.Nodes[newX][newY]
-	if target.Type == NodeFirewall {
+	if target.Type == NodeFirewall && !target.Vulnerable {
 		g.addLog("FIREWALL BLOCKED - ACCESS DENIED", "danger")
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -447,12 +549,39 @@ func (s *Server) handleMove(w http.ResponseWriter, r *http.Request) {
 	g.Player.X = newX
 	g.Player.Y = newY
 
+	if target.Type == NodeFirewall && target.Vulnerable {
+		s.destroyFirewall(g, newX, newY)
+	}
+
+	for _, e := range g.Enemies {
+		if e.X == g.Player.X && e.Y == g.Player.Y {
+			if time.Now().Before(g.ShieldUntil) {
+				g.addLog("DATA SHIELD ABSORBED TRACKER ATTACK", "success")
+				g.ShieldUntil = time.Time{}
+			} else {
+				g.GameOver = true
+				g.addLog("BREACH DETECTED - PLAYER COMPROMISED", "danger")
+				g.addLog("CONNECTION TERMINATED", "danger")
+			}
+			g.Nodes[g.Player.X][g.Player.Y].Type = NodePlayer
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success":  true,
+				"score":    g.Score,
+				"level":    g.Level,
+				"gameOver": g.GameOver,
+			})
+			return
+		}
+	}
+
 	switch target.Type {
 	case NodeHackable:
 		g.addLog(fmt.Sprintf("UPLOADING VIRUS... +%d CREDITS", target.Data), "success")
 		g.Score += target.Data
 		target.Type = NodeEmpty
 		target.Hacked = true
+		s.markVulnerableFirewalls(g)
 	case NodeEnemy:
 		g.GameOver = true
 		g.addLog("BREACH DETECTED - PLAYER COMPROMISED", "danger")
@@ -500,6 +629,8 @@ func (s *Server) hackAdjacent(g *GameGrid) {
 	if !hacked {
 		g.addLog("NO HACKABLE NODES IN RANGE", "warning")
 	}
+
+	s.markVulnerableFirewalls(g)
 }
 
 func (s *Server) handleRestart(w http.ResponseWriter, r *http.Request) {

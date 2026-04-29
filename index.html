@@ -111,17 +111,19 @@ body::before {
 }
 
 .cell {
+  width: 100%;
+  height: auto;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.5rem, 2.5vw, 1.2rem);
+  font-size: 1.2rem;
   border: 1px solid rgba(0,255,255,0.08);
   transition: all 0.15s ease;
   position: relative;
+  overflow: hidden;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
 }
 
 .cell.empty { background: rgba(0,255,255,0.02); }
@@ -207,6 +209,47 @@ body::before {
   color: var(--red);
   font-size: 1.2rem;
   text-shadow: 0 0 8px var(--red);
+}
+
+.cell.firewall.vulnerable {
+  background: rgba(255,0,64,0.25);
+  border-color: var(--yellow);
+  box-shadow: inset 0 0 15px rgba(255,0,64,0.4), 0 0 10px rgba(255,242,0,0.4);
+  animation: firewallCritical 0.6s infinite;
+}
+.cell.firewall.vulnerable::before {
+  content: '⊗';
+  color: var(--yellow);
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-shadow: 0 0 10px var(--yellow), 0 0 20px rgba(255,242,0,0.5);
+}
+
+@keyframes firewallCritical {
+  0%, 100% { opacity: 1; box-shadow: inset 0 0 15px rgba(255,0,64,0.3), 0 0 10px rgba(255,242,0,0.4); }
+  50% { opacity: 0.6; box-shadow: inset 0 0 25px rgba(255,0,64,0.5), 0 0 20px rgba(255,242,0,0.7); }
+}
+
+.cell.firewall.exploding {
+  animation: firewallExplode 0.5s ease forwards;
+}
+
+@keyframes firewallExplode {
+  0% { background: rgba(255,242,0,0.6); box-shadow: 0 0 30px var(--yellow), 0 0 60px rgba(255,242,0,0.5); transform: scale(1); }
+  40% { background: rgba(255,0,64,0.8); box-shadow: 0 0 50px var(--red), 0 0 100px rgba(255,0,64,0.6); transform: scale(1.3); }
+  100% { background: rgba(0,255,65,0.05); box-shadow: 0 0 10px rgba(0,255,65,0.2); transform: scale(1); }
+}
+
+.cell.player.shielded {
+  background: rgba(0,255,255,0.25);
+  border-color: var(--cyan);
+  box-shadow: 0 0 15px var(--cyan), 0 0 30px rgba(0,255,255,0.3), 0 0 50px rgba(0,255,255,0.15);
+  animation: playerShieldPulse 0.8s infinite;
+}
+
+@keyframes playerShieldPulse {
+  0%, 100% { box-shadow: 0 0 15px var(--cyan), 0 0 30px rgba(0,255,255,0.3), 0 0 50px rgba(0,255,255,0.15); }
+  50% { box-shadow: 0 0 30px var(--cyan), 0 0 60px rgba(0,255,255,0.5), 0 0 90px rgba(0,255,255,0.25); }
 }
 
 .cell.hacked { background: rgba(0,255,65,0.05); border-color: rgba(0,255,65,0.2); }
@@ -594,6 +637,7 @@ body::before {
 .legend-color.enemy { background: rgba(255,0,255,0.3); border-color: var(--fuchsia); box-shadow: 0 0 5px var(--fuchsia); }
 .legend-color.hackable { background: rgba(255,242,0,0.2); border-color: var(--yellow); box-shadow: 0 0 5px var(--yellow); }
 .legend-color.firewall { background: rgba(255,0,64,0.2); border-color: var(--red); }
+.legend-color.firewall-vuln { background: rgba(255,242,0,0.2); border-color: var(--yellow); box-shadow: 0 0 5px var(--yellow); }
 
 .footer {
   text-align: center;
@@ -680,91 +724,100 @@ button:focus:not(:focus-visible) {
   * { -webkit-tap-highlight-color: transparent; }
 
   body {
-    padding-bottom: 0;
     min-height: 100dvh;
     overflow-x: hidden;
     overflow-y: auto;
   }
 
   .header {
-    padding: 12px 10px;
+    padding: 10px 8px;
+    border-bottom-width: 1px;
   }
 
+  .header::before, .header::after { display: none; }
+
   .header h1 {
-    font-size: clamp(1.1rem, 5vw, 1.8rem);
-    letter-spacing: 4px;
+    font-size: clamp(1rem, 4.5vw, 1.6rem);
+    letter-spacing: 3px;
   }
 
   .header .subtitle {
-    font-size: clamp(0.5rem, 2.5vw, 0.7rem);
-    letter-spacing: 2px;
+    font-size: clamp(0.45rem, 2vw, 0.65rem);
+    letter-spacing: 1.5px;
+    margin-top: 2px;
   }
 
   .container {
     flex-direction: column;
-    padding: 10px 8px 160px;
-    gap: 12px;
+    padding: 8px 6px 200px;
+    gap: 8px;
     align-items: center;
   }
 
   .grid-panel {
     width: 100%;
-    max-width: min(90vw, 500px);
-    padding: 0 2px;
+    max-width: 100%;
+    padding: 0;
   }
 
   .grid-panel::before {
     font-size: 0.6rem;
-    top: -20px;
+    top: -18px;
+    left: 2px;
   }
 
   #grid {
-    gap: clamp(1px, 0.3vw, 3px);
-    padding: clamp(4px, 1vw, 10px);
+    gap: 1px;
+    padding: clamp(2px, 0.8vw, 6px);
     width: 100%;
+    max-width: 100%;
+    border-width: 1px;
+    box-shadow: 0 0 15px rgba(0,255,255,0.08), inset 0 0 15px rgba(0,255,255,0.03);
   }
 
   .cell {
-    font-size: clamp(0.4rem, 2.2vw, 0.9rem);
+    font-size: clamp(0.35rem, 2vw, 0.75rem);
     border-width: 1px;
   }
 
-  .cell.player::before { font-size: clamp(0.6rem, 3vw, 1.2rem); }
-  .cell.enemy::before, .cell.enemy.frozen::before { font-size: clamp(0.55rem, 2.8vw, 1rem); }
-  .cell.hackable::before { font-size: clamp(0.4rem, 2vw, 0.75rem); }
-  .cell.firewall::before { font-size: clamp(0.5rem, 2.5vw, 0.85rem); }
-  .cell.hacked::before { font-size: clamp(0.4rem, 2vw, 0.7rem); }
+  .cell.player::before { font-size: clamp(0.5rem, 2.5vw, 1rem); }
+  .cell.enemy::before, .cell.enemy.frozen::before { font-size: clamp(0.45rem, 2.3vw, 0.85rem); }
+  .cell.hackable::before { font-size: clamp(0.3rem, 1.8vw, 0.65rem); }
+  .cell.firewall::before { font-size: clamp(0.4rem, 2vw, 0.7rem); }
+  .cell.hacked::before { font-size: clamp(0.3rem, 1.5vw, 0.6rem); }
   .cell.empty::after { width: 1px; height: 1px; }
 
   .legend {
     justify-content: center;
-    gap: 4px 10px;
-    padding: 6px 4px;
+    gap: 3px 8px;
+    padding: 4px 2px;
+    margin-top: 6px;
   }
 
   .legend-item { font-size: 0.5rem; }
-  .legend-color { width: 8px; height: 8px; }
+  .legend-color { width: 7px; height: 7px; }
 
   .stats-panel {
     width: 100%;
-    max-width: min(90vw, 500px);
+    max-width: 100%;
     min-width: auto;
   }
 
   .panel {
-    padding: 10px;
-    margin-bottom: 10px;
+    padding: 8px;
+    margin-bottom: 8px;
+    border-width: 1px;
   }
 
-  .panel::before { font-size: 0.55rem; }
+  .panel::before { font-size: 0.5rem; }
 
-  #log { height: 80px; }
-  .log-entry { font-size: 0.6rem; padding: 3px 5px; }
-  .log-time { font-size: 0.55rem; }
+  #log { height: 60px; }
+  .log-entry { font-size: 0.55rem; padding: 2px 4px; }
+  .log-time { font-size: 0.5rem; }
 
-  .stat-row { padding: 5px 0; }
-  .stat-label { font-size: 0.6rem; }
-  .stat-value { font-size: 0.7rem; }
+  .stat-row { padding: 4px 0; }
+  .stat-label { font-size: 0.55rem; }
+  .stat-value { font-size: 0.65rem; }
 
   .dpad-container {
     position: fixed;
@@ -773,133 +826,147 @@ button:focus:not(:focus-visible) {
     right: 0;
     transform: none;
     z-index: 400;
-    background: rgba(5,5,5,0.92);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 8px 16px;
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    background: rgba(5,5,5,0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 6px 10px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
     border-radius: 0;
     border: none;
-    border-top: 1px solid rgba(0,255,255,0.15);
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
+    border-top: 1px solid rgba(0,255,255,0.12);
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.7);
     margin-top: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
   .dpad-btn {
-    width: 52px;
-    height: 52px;
-    font-size: 1.1rem;
-    border-radius: 10px;
+    width: 48px;
+    height: 48px;
+    font-size: 1rem;
+    border-radius: 8px;
   }
 
   .dpad-btn.hack {
     width: 100%;
-    max-width: 200px;
-    height: 40px;
-    border-radius: 10px;
+    max-width: 180px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
   }
 
-  .dpad-row { gap: 6px; }
-  .dpad-container { gap: 6px; }
+  .dpad-row { gap: 4px; }
+  .dpad-container { gap: 4px; }
 
   .action-buttons {
     width: 100%;
-    max-width: min(90vw, 400px);
+    max-width: 100%;
     margin-top: 0;
     display: flex;
     flex-direction: row;
-    gap: 6px;
+    gap: 4px;
   }
 
   .action-btn {
-    padding: 8px 12px;
-    font-size: 0.65rem;
-    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 0.55rem;
+    border-radius: 6px;
     letter-spacing: 1px;
   }
 
-  .overlay h2 { font-size: 1.6rem; letter-spacing: 2px; }
-  .overlay p { font-size: 0.8rem; }
-  .overlay button { width: 80%; max-width: 260px; padding: 12px; font-size: 0.9rem; }
+  .overlay h2 { font-size: 1.4rem; letter-spacing: 2px; }
+  .overlay p { font-size: 0.75rem; }
+  .overlay button { width: 80%; max-width: 240px; padding: 10px; font-size: 0.8rem; }
 
   .tutorial-box {
-    width: 92%;
-    max-width: 400px;
-    padding: 25px 20px;
-    max-height: 85vh;
+    width: 94%;
+    max-width: 380px;
+    padding: 20px 16px;
+    max-height: 88vh;
     overflow-y: auto;
   }
 
-  .tutorial-title { font-size: 1.2rem; }
-  .tutorial-step { padding: 8px; margin: 12px 0; }
-  .step-content h3 { font-size: 0.8rem; }
-  .step-content p { font-size: 0.7rem; line-height: 1.4; }
-  .step-content .key { font-size: 0.65rem; padding: 1px 5px; }
+  .tutorial-title { font-size: 1.1rem; margin-bottom: 15px; }
+  .tutorial-step { padding: 6px; margin: 8px 0; gap: 10px; }
+  .step-num { font-size: 1.2rem; min-width: 24px; }
+  .step-content h3 { font-size: 0.75rem; }
+  .step-content p { font-size: 0.65rem; line-height: 1.3; }
+  .step-content .key { font-size: 0.6rem; padding: 1px 4px; }
 
   .tutorial-legend {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    padding: 10px;
+    gap: 6px;
+    padding: 8px;
+    margin: 12px 0;
   }
 
-  .skip-link { padding: 5px 10px; font-size: 0.65rem; }
+  .t-legend-icon { width: 20px; height: 20px; font-size: 0.9rem; }
+  .t-legend-text { font-size: 0.65rem; }
 
-  .hack-ripple {
-    animation: rippleExpandMobile 0.5s ease-out forwards;
-  }
+  .skip-link { padding: 4px 8px; font-size: 0.6rem; }
 
   .footer { display: none; }
 
   .paused-badge {
-    top: 8px;
-    right: 8px;
-    font-size: 0.6rem;
-    padding: 5px 10px;
+    top: 6px;
+    right: 6px;
+    font-size: 0.55rem;
+    padding: 4px 8px;
   }
 }
 
 @media (max-width: 380px) {
-  .header { padding: 8px 5px; }
-  .header h1 { font-size: 1rem; letter-spacing: 3px; }
-  .header .subtitle { font-size: 0.45rem; }
+  .container { padding: 6px 4px 190px; gap: 6px; }
 
-  #grid { padding: 3px; gap: 1px; }
-  .cell { font-size: 0.45rem; }
+  .header { padding: 6px 4px; }
+  .header h1 { font-size: 0.95rem; letter-spacing: 2px; }
+  .header .subtitle { font-size: 0.4rem; }
 
-  .dpad-btn { width: 46px; height: 46px; font-size: 1rem; }
-  .dpad-btn.hack { height: 36px; font-size: 0.65rem; }
+  #grid { padding: 2px; gap: 1px; }
+  .cell { font-size: 0.3rem; }
+  .cell.player::before { font-size: 0.45rem; }
+  .cell.enemy::before { font-size: 0.4rem; }
 
-  .action-btn { padding: 7px 8px; font-size: 0.6rem; }
+  .dpad-btn { width: 44px; height: 44px; font-size: 0.9rem; }
+  .dpad-btn.hack { height: 32px; font-size: 0.6rem; max-width: 160px; }
 
-  .panel { padding: 8px; }
-  #log { height: 60px; }
-  .log-entry { font-size: 0.55rem; }
+  .action-btn { padding: 5px 6px; font-size: 0.5rem; }
+
+  .panel { padding: 6px; }
+  #log { height: 50px; }
+  .log-entry { font-size: 0.5rem; }
+  .stat-label { font-size: 0.5rem; }
+  .stat-value { font-size: 0.6rem; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
-  .container { padding: 20px; gap: 20px; }
+  .container { padding: 16px; gap: 16px; }
 
-  .grid-panel { max-width: 480px; }
+  .grid-panel { max-width: 440px; }
 
-  #grid { gap: 2px; padding: 10px; }
+  #grid { gap: 2px; padding: 8px; }
 
   .cell {
-    width: 36px;
-    height: 36px;
-    font-size: 1rem;
+    width: 100%;
+    height: auto;
+    font-size: 0.9rem;
   }
 
-  .cell.player::before { font-size: 1.3rem; }
-  .cell.enemy::before { font-size: 1.1rem; }
-  .cell.hackable::before { font-size: 0.85rem; }
-  .cell.firewall::before { font-size: 1rem; }
+  .cell.player::before { font-size: 1.1rem; }
+  .cell.enemy::before { font-size: 1rem; }
+  .cell.hackable::before { font-size: 0.75rem; }
+  .cell.firewall::before { font-size: 0.85rem; }
 
-  .stats-panel { min-width: 240px; }
-  #log { height: 200px; }
+  .stats-panel { min-width: 220px; }
+  #log { height: 160px; }
+
+  .dpad-btn { width: 54px; height: 54px; font-size: 1.1rem; }
+  .dpad-btn.hack { width: 170px; height: 42px; font-size: 0.75rem; }
+
+  .action-btn { padding: 10px; font-size: 0.75rem; }
 }
 </style>
 </head>
@@ -922,6 +989,7 @@ button:focus:not(:focus-visible) {
       <div class="legend-item"><div class="legend-color enemy"></div>TRACKER</div>
       <div class="legend-item"><div class="legend-color hackable"></div>DATA NODE</div>
       <div class="legend-item"><div class="legend-color firewall"></div>FIREWALL</div>
+      <div class="legend-item"><div class="legend-color firewall-vuln"></div>VULNERABLE</div>
     </div>
   </div>
 
@@ -942,6 +1010,10 @@ button:focus:not(:focus-visible) {
       <div class="stat-row">
         <span class="stat-label">STATUS</span>
         <span class="stat-value" id="status">ONLINE</span>
+      </div>
+      <div class="stat-row" id="shieldRow" style="display:none">
+        <span class="stat-label">SHIELD</span>
+        <span class="stat-value" id="shieldStatus" style="color: var(--cyan); text-shadow: 0 0 5px var(--cyan);">ACTIVE</span>
       </div>
     </div>
 
@@ -1011,6 +1083,14 @@ button:focus:not(:focus-visible) {
     <div class="tutorial-step">
       <span class="step-num">04</span>
       <div class="step-content">
+        <h3>FIREWALL BREACH PROTOCOL</h3>
+        <p>Hack all nodes surrounding a firewall <span class="key">▓</span> to make it vulnerable <span class="key">⊗</span> (yellow cross). Step onto a vulnerable firewall to destroy it, triggering an EMP that freezes trackers for 5s, earning +50 credits, and gaining a 3s data shield that blocks one tracker attack. Destroying adjacent firewalls creates chain reactions.</p>
+      </div>
+    </div>
+
+    <div class="tutorial-step">
+      <span class="step-num">05</span>
+      <div class="step-content">
         <h3>LEVEL UP</h3>
         <p>Accumulate credits to raise your clearance level. Higher levels spawn more data nodes but also more aggressive trackers. Survive as long as possible.</p>
       </div>
@@ -1032,6 +1112,10 @@ button:focus:not(:focus-visible) {
       <div class="t-legend-item">
         <div class="t-legend-icon firewall">▓</div>
         <span class="t-legend-text">FIREWALL (Block)</span>
+      </div>
+      <div class="t-legend-item">
+        <div class="t-legend-icon" style="color: var(--yellow); border-color: var(--yellow); background: rgba(255,242,0,0.15); box-shadow: 0 0 8px rgba(255,242,0,0.3); font-size: 1.2rem; font-weight: bold;">⊗</div>
+        <span class="t-legend-text">VULNERABLE (Step to destroy)</span>
       </div>
     </div>
 
@@ -1100,6 +1184,8 @@ function updateDisplay(data) {
   enemiesFrozen = data.enemiesFrozen;
   const wasFreezeReady = freezeReady;
   freezeReady = data.freezeReady;
+  const wasShielded = isShielded;
+  isShielded = data.hasShield;
   const freezeBtn = document.getElementById('freezeBtn');
   if (freezeBtn) {
     if (data.enemiesFrozen) {
@@ -1118,6 +1204,15 @@ function updateDisplay(data) {
     playSFX('freeze');
   }
 
+  if (!wasShielded && data.hasShield) {
+    playSFX('shield');
+  }
+
+  const prevFirewalls = new Set();
+  document.querySelectorAll('.cell.firewall').forEach(c => {
+    prevFirewalls.add(c.dataset.index);
+  });
+
   cells.forEach((cell, idx) => {
     const x = Math.floor(idx / 12);
     const y = idx % 12;
@@ -1126,6 +1221,9 @@ function updateDisplay(data) {
 
     if (x === data.player.X && y === data.player.Y) {
       cell.classList.add('player');
+      if (data.hasShield) {
+        cell.classList.add('shielded');
+      }
       return;
     }
 
@@ -1147,12 +1245,27 @@ function updateDisplay(data) {
       cell.classList.add('hackable');
     } else if (node.type === 4) {
       cell.classList.add('firewall');
+      if (node.vulnerable) {
+        cell.classList.add('vulnerable');
+      }
     } else if (node.hacked) {
       cell.classList.add('hacked');
     } else {
       cell.classList.add('empty');
     }
   });
+
+  for (const key of prevFirewalls) {
+    const [x, y] = key.split(',').map(Number);
+    if (x >= 0 && x < 12 && y >= 0 && y < 12 && data.nodes[x][y].hacked && data.nodes[x][y].type !== 4) {
+      const idx = x * 12 + y;
+      const cell = document.querySelector(`.cell[data-index="${idx}"]`);
+      if (cell) {
+        cell.classList.add('exploding');
+        setTimeout(() => cell.classList.remove('exploding'), 500);
+      }
+    }
+  }
 
   for (const key of currentHackedNodes) {
     if (!prevHackedNodes.has(key)) {
@@ -1187,6 +1300,13 @@ function updateDisplay(data) {
   document.getElementById('status').textContent = data.gameOver ? 'OFFLINE' : 'ONLINE';
   document.getElementById('status').style.color = data.gameOver ? 'var(--red)' : 'var(--green)';
 
+  const shieldRow = document.getElementById('shieldRow');
+  if (data.hasShield) {
+    shieldRow.style.display = 'flex';
+  } else {
+    shieldRow.style.display = 'none';
+  }
+
   if (data.gameOver) {
     document.getElementById('finalScore').textContent = data.score;
     document.getElementById('overlay').classList.add('active');
@@ -1205,7 +1325,7 @@ function updateLog(log) {
   const newEntries = log.slice(currentLog.length);
   currentLog = log;
 
-  newEntries.forEach(entry => {
+    newEntries.forEach(entry => {
     const div = document.createElement('div');
     div.className = 'log-entry ' + entry.type;
     div.innerHTML = '<span class="log-time">[' + entry.time + ']</span>' + entry.message;
@@ -1216,6 +1336,15 @@ function updateLog(log) {
     }
     if (entry.message.includes('FIREWALL BLOCKED')) {
       playSFX('firewall');
+    }
+    if (entry.message.includes('FIREWALL') && entry.message.includes('BREACHED')) {
+      playSFX('firewallBreach');
+    }
+    if (entry.message.includes('EMP PULSE')) {
+      playSFX('freeze');
+    }
+    if (entry.message.includes('SHIELD ABSORBED')) {
+      playSFX('shieldAbsorb');
     }
   });
 
@@ -1317,6 +1446,7 @@ async function restart() {
   gameOver = false;
   enemiesFrozen = false;
   freezeReady = true;
+  isShielded = false;
   stopMusic();
 
   try {
@@ -1456,6 +1586,22 @@ function playSFX(name) {
       setTimeout(() => playTone(659, 'square', 0.1, 0.08, 1000), 200);
       setTimeout(() => playTone(880, 'square', 0.2, 0.1, 1200), 300);
       break;
+    case 'firewallBreach':
+      playTone(100, 'sawtooth', 0.3, 0.15, 200);
+      setTimeout(() => playTone(60, 'square', 0.4, 0.12, 150), 100);
+      setTimeout(() => playTone(40, 'sawtooth', 0.5, 0.1, 100), 250);
+      setTimeout(() => playTone(2000, 'sine', 0.15, 0.04), 50);
+      setTimeout(() => playTone(1500, 'sine', 0.1, 0.03), 120);
+      break;
+    case 'shield':
+      playTone(1200, 'sine', 0.15, 0.08);
+      setTimeout(() => playTone(1600, 'sine', 0.15, 0.06), 80);
+      setTimeout(() => playTone(2000, 'sine', 0.2, 0.05), 160);
+      break;
+    case 'shieldAbsorb':
+      playTone(800, 'sine', 0.2, 0.1, 1000);
+      setTimeout(() => playTone(600, 'sine', 0.15, 0.08, 800), 100);
+      break;
   }
 }
 
@@ -1589,6 +1735,7 @@ document.addEventListener('touchstart', () => initAudio(), { once: true });
 
 let enemiesFrozen = false;
 let freezeReady = true;
+let isShielded = false;
 
 function showTutorial() {
   if (localStorage.getItem('cg2077_tutorial') !== 'done') {
